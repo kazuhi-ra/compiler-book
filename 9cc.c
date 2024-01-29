@@ -7,11 +7,32 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  printf(".intel_syntax noprefix\n");
-  printf(".global main \n");
-  printf("main:\n");
-  printf("	mov rax, %d\n", atoi(argv[1]));
-  printf("	ret\n");
+  // コマンドに渡した第一引数の文字列
+  char *p = argv[1];
 
+  printf(".intel_syntax noprefix\n");
+  printf(".global main\n");
+  printf("main:\n");
+  // 処理した残りの部分を示すようにポインタを更新
+  printf("  mov rax, %ld\n", strtol(p, &p, 10));
+
+  while (*p) {
+    if (*p == '+') {
+      p++;
+      printf("  add rax, %ld\n", strtol(p, &p, 10));
+      continue;
+    }
+
+    if (*p == '-') {
+      p++;
+      printf("  sub rax, %ld\n", strtol(p, &p, 10));
+      continue;
+    }
+
+    fprintf(stderr, "予期しない文字です: '%c'\n", *p);
+    return 1;
+  }
+
+  printf("  ret\n");
   return 0;
 }
