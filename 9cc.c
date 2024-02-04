@@ -21,6 +21,22 @@ struct Token {
 
 Token *token;
 
+char *user_input;
+
+void error_at(char *loc, char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+
+  int pos = loc - user_input;
+  fprintf(stderr, "%s\n", user_input);
+  fprintf(stderr, "%*s", pos, " ");
+  fprintf(stderr, "%s", "^ ");
+  fprintf(stderr, fmt, ap);
+  fprintf(stderr, "\n");
+
+  exit(1);
+}
+
 void error(char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
@@ -38,7 +54,7 @@ bool consume(char op) {
 
 int expect_number() {
   if (token->kind != TK_NUM)
-    error("数ではありません");
+    error_at(token->str, "expected a number");
   int val = token->val;
   token = token->next;
   return val;
@@ -55,7 +71,8 @@ Token *new_token(TokenKind kind, Token *cur, char *str) {
   return tok;
 }
 
-Token *tokenize(char *p) {
+Token *tokenize() {
+  char *p = user_input;
   Token head;
   head.next = NULL;
   Token *cur = &head;
@@ -78,7 +95,7 @@ Token *tokenize(char *p) {
       continue;
     }
 
-    error("トークナイズできません");
+    error_at(p, "expected a number");
   }
 
   new_token(TK_EOF, cur, p);
@@ -87,12 +104,13 @@ Token *tokenize(char *p) {
 
 int main(int argc, char **argv) {
   if (argc != 2) {
-    fprintf(stderr, "引数の個数が正しくありません");
+    error("%s: invalid number of arguments", argv[0]);
     return 1;
   }
 
   // コマンドに渡した第一引数の文字列
-  token = tokenize(argv[1]);
+  user_input = argv[1];
+  token = tokenize();
 
   printf(".intel_syntax noprefix\n");
   printf(".global main\n");
@@ -112,7 +130,7 @@ int main(int argc, char **argv) {
       continue;
     }
 
-    error("予期しない文字です: %c", token->str[0]);
+    error_at(token->str, "unexpected char");
   }
 
   printf("  ret\n");
