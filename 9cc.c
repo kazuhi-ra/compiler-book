@@ -82,6 +82,8 @@ Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
   return tok;
 }
 
+bool startswith(char *p, char *q) { return memcmp(p, q, strlen(q)) == 0; }
+
 Token *tokenize() {
   char *p = user_input;
   Token head;
@@ -91,6 +93,12 @@ Token *tokenize() {
   while (*p) {
     if (isspace(*p)) {
       p++;
+      continue;
+    }
+
+    if (startswith(p, "==")) {
+      cur = new_token(TK_RESERVED, cur, p, 2);
+      p += 2;
       continue;
     }
 
@@ -119,6 +127,7 @@ typedef enum {
   ND_MUL,
   ND_DIV,
   ND_NUM,
+  ND_EQ,
 } NodeKind;
 
 typedef struct Node Node;
@@ -147,12 +156,31 @@ Node *new_node_num(int val) {
 }
 
 Node *expr();
+Node *equality();
+Node *add();
 Node *mul();
 Node *unary();
 Node *primary();
 
 // expr    = mul ("+" mul | "-" mul)*
 Node *expr() {
+  Node *node = equality();
+
+  return node;
+}
+
+Node *equality() {
+  Node *node = add();
+
+  for (;;) {
+    if (consume("=="))
+      node = new_node(ND_EQ, node, add());
+    else
+      return node;
+  }
+}
+
+Node *add() {
   Node *node = mul();
 
   for (;;) {
@@ -212,6 +240,11 @@ void gen(Node *node) {
   printf("\tpop rax\n");
 
   switch (node->kind) {
+  case ND_EQ:
+    printf("\tcmp rax, rdi\n");
+    printf("\tsete al\n");
+    printf("\tmovzb rax, al\n");
+    break;
   case ND_ADD:
     printf("\tadd rax, rdi\n");
     break;

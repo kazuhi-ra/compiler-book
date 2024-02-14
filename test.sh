@@ -28,4 +28,7 @@ assert 4 '(3+5)/2'
 assert 15 '-3*-5'
 assert 16 '(-3-5)*-2'
 
+assert 0 '0==1'
+assert 1 '42==42'
+
 echo OK
